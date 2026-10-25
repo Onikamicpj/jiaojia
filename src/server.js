@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { PUBLIC_DIR } from './core/paths.js';
+import { appraise, getHistory } from './core/appraise.js';
 import { searchAll } from './core/search.js';
 import { buildState, loadKits } from './core/state.js';
 import { collect } from './sources/index.js';
@@ -45,6 +46,14 @@ async function serveStatic(req, res, pathname) {
   }
 }
 
+async function readJsonBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString('utf8');
+  if (!raw) return {};
+  return JSON.parse(raw);
+}
+
 export function createServer() {
   return http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
@@ -56,6 +65,22 @@ export function createServer() {
         if (q.length > 60) return sendJson(res, 400, { error: '关键词太长' });
         const result = await searchAll(q);
         return sendJson(res, 200, result);
+      }
+
+      if (url.pathname === '/api/appraise' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const result = await appraise({
+          kitId: body.kitId,
+          price: body.price,
+          currency: body.currency
+        });
+        return sendJson(res, 200, result);
+      }
+
+      if (url.pathname === '/api/history' && req.method === 'GET') {
+        const kitId = url.searchParams.get('kitId');
+        if (!kitId) return sendJson(res, 400, { error: '缺少 kitId' });
+        return sendJson(res, 200, { kitId, history: await getHistory(kitId) });
       }
 
       if (url.pathname === '/api/state' && req.method === 'GET') {

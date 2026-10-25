@@ -74,11 +74,102 @@ function renderRows(data) {
         <div class="suan" style="color:${color}">${r.suan ? r.suan.toFixed(1) : '—'}<span>算</span></div>
         <div class="grade">${gradeText}</div>
       </div>
-      <a class="row-go" href="${esc(r.url)}" target="_blank" rel="noopener">打开</a>
+      <div class="row-acts">
+        ${r.kitId ? `<button class="row-ap" type="button" data-kit="${esc(r.kitId)}" data-title="${esc(r.title)}">核价</button>` : ''}
+        <a class="row-go" href="${esc(r.url)}" target="_blank" rel="noopener">打开</a>
+      </div>
     </article>`;
   }).join('');
 
   return `<div class="rows">${rows}</div>`;
+}
+
+/* ---------- 核价 ---------- */
+
+function renderAppraisePanel(kitId, title) {
+  return `<div class="ap-panel" data-panel="${esc(kitId)}">
+    <div class="ap-row">
+      <span class="ap-label">你看到的价格</span>
+      <div class="ap-field">
+        <span class="ap-cur">¥</span>
+        <input class="ap-input" type="number" inputmode="decimal" min="1" step="1" placeholder="比如 230" data-kit="${esc(kitId)}">
+        <select class="ap-sel" data-kit="${esc(kitId)}">
+          <option value="CNY">人民币</option>
+          <option value="JPY">日元</option>
+        </select>
+      </div>
+      <button class="ap-btn" type="button" data-kit="${esc(kitId)}" data-title="${esc(title)}">核价</button>
+    </div>
+    <div class="ap-out" data-out="${esc(kitId)}"></div>
+  </div>`;
+}
+
+function renderVerdict(d) {
+  const g = d.grade;
+  const color = GRADE_COLOR[g?.key ?? 'normal'];
+  const trend = d.trend
+    ? `<div class="ap-trend ${d.trend.direction}">
+        ${d.trend.direction === 'up' ? '比上次涨了' : d.trend.direction === 'down' ? '比上次降了' : '跟上一次持平'}
+        ${Math.abs(d.trend.diffSuan).toFixed(2)} 算（${d.trend.diffPct > 0 ? '+' : ''}${d.trend.diffPct}%）
+      </div>`
+    : `<div class="ap-trend first">第一次记录这只。以后再核，就能看出是涨还是降。</div>`;
+
+  const best = d.bestEver && d.historyCount > 1
+    ? `<div class="ap-best">历史最低 ${d.bestEver.suan.toFixed(1)} 算（¥${d.bestEver.cny}）</div>`
+    : '';
+
+  return `<div class="ap-card">
+    <div class="ap-head">
+      <div class="ap-suan" style="color:${color}">${d.suan.toFixed(1)}<span>算</span></div>
+      <div class="ap-verdict">
+        <div class="ap-grade" style="color:${color}">${g?.zh ?? ''}</div>
+        <div class="ap-say">${g?.verdict ?? ''}</div>
+      </div>
+    </div>
+
+    <div class="ap-math">
+      <span>官方定价 <b>¥${Number(d.msrpJpy).toLocaleString('ja-JP')}</b> 円</span>
+      <span class="ap-arrow">→</span>
+      <span>折合 <b>¥${d.msrpCny.toFixed(1)}</b></span>
+      <span class="ap-sep">·</span>
+      <span>你看到 <b>¥${d.seen.cny}</b></span>
+      <span class="ap-sep">·</span>
+      <span style="color:${color}">比官价 ${d.vsMsrpPct > 0 ? '贵' : '便宜'} ${Math.abs(d.vsMsrpPct)}%</span>
+    </div>
+
+    ${trend}
+    ${best}
+  </div>`;
+}
+
+async function doAppraise(kitId, title, price, currency) {
+  const out = document.querySelector(`[data-out="${kitId}"]`);
+  if (!out) return;
+
+  if (!price || Number(price) <= 0) {
+    out.innerHTML = '<div class="ap-err">先填你看到的价格</div>';
+    return;
+  }
+
+  out.innerHTML = '<div class="ap-loading">核价中…</div>';
+
+  try {
+    const res = await fetch('/api/appraise', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ kitId, price: Number(price), currency })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+
+    if (data.suan === null || data.suan === undefined) {
+      out.innerHTML = `<div class="ap-err">这款没有官方日元定价（国模 / KO），算不了几算。</div>`;
+      return;
+    }
+    out.innerHTML = renderVerdict(data);
+  } catch (err) {
+    out.innerHTML = `<div class="ap-err">核价失败：${esc(err.message)}</div>`;
+  }
 }
 
 function renderSummary(data) {
@@ -180,6 +271,7 @@ async function search(keyword) {
       ? renderSummary(data) + renderRows(data)
       : renderEmpty(data);
 
+    bindAppraise();
     renderPlatforms(q);
     history.replaceState(null, '', `?q=${encodeURIComponent(q)}`);
   } catch (err) {
@@ -192,6 +284,32 @@ async function search(keyword) {
 }
 
 /* ---------- 事件 ---------- */
+
+function bindAppraise() {
+  el.result.querySelectorAll('.row-ap').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const kitId = btn.dataset.kit;
+      const title = btn.dataset.title;
+      const row = btn.closest('.row');
+
+      const existing = document.querySelector(`[data-panel="${kitId}"]`);
+      document.querySelectorAll('.ap-panel').forEach((p) => p.remove());
+      if (existing) return;
+
+      row.insertAdjacentHTML('afterend', renderAppraisePanel(kitId, title));
+      const panel = document.querySelector(`[data-panel="${kitId}"]`);
+      const input = panel.querySelector('.ap-input');
+      const select = panel.querySelector('.ap-sel');
+
+      const run = () => doAppraise(kitId, title, input.value, select.value);
+      panel.querySelector('.ap-btn').addEventListener('click', run);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') run();
+      });
+      input.focus();
+    });
+  });
+}
 
 el.form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -209,4 +327,21 @@ const initial = new URLSearchParams(location.search).get('q');
 if (initial) {
   el.q.value = initial;
   search(initial);
+}
+
+// 调试：?demo=appraise 自动展开第一行核价面板，方便截图核对排版
+if (new URLSearchParams(location.search).get('demo') === 'appraise') {
+  setTimeout(() => {
+    const btn = document.querySelector('.row-ap');
+    if (!btn) return;
+    btn.click();
+    setTimeout(() => {
+      const input = document.querySelector('.ap-input');
+      const go = document.querySelector('.ap-btn');
+      if (input && go) {
+        input.value = '230';
+        go.click();
+      }
+    }, 150);
+  }, 1500);
 }

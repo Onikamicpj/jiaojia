@@ -53,6 +53,7 @@ function decorate(quote, kit, fx) {
 
   return {
     ...quote,
+    kitId: kit?.id ?? null,
     cny: round(cny, 2),
     suan: round(suan, 2),
     msrpJpy: kit?.msrpJpy ?? null,
