@@ -49,7 +49,9 @@
         "初代高达",
         "rx78",
         "78"
-      ]
+      ],
+      "family": "rx78",
+      "familyZh": "元祖高达"
     },
     {
       "id": "bandai-hg-aerial",
@@ -85,7 +87,9 @@
         "魔女",
         "aerial",
         "xvx"
-      ]
+      ],
+      "family": "aerial",
+      "familyZh": "风灵高达"
     },
     {
       "id": "bandai-rg-nu",
@@ -121,7 +125,9 @@
         "ν高达",
         "rx93",
         "rx-93"
-      ]
+      ],
+      "family": "nu",
+      "familyZh": "ν高达"
     },
     {
       "id": "bandai-rg-sazabi",
@@ -156,7 +162,9 @@
         "sazabi",
         "msn04",
         "msn-04"
-      ]
+      ],
+      "family": "sazabi",
+      "familyZh": "沙扎比"
     },
     {
       "id": "bandai-rg-unicorn",
@@ -192,7 +200,9 @@
         "unicorn",
         "rx0",
         "rx-0"
-      ]
+      ],
+      "family": "unicorn",
+      "familyZh": "独角兽高达"
     },
     {
       "id": "bandai-rg-strike",
@@ -233,7 +243,9 @@
         "空霸",
         "aile",
         "strike"
-      ]
+      ],
+      "family": "strike",
+      "familyZh": "强袭高达"
     },
     {
       "id": "bandai-rg-god",
@@ -265,7 +277,9 @@
         "神高达",
         "神威",
         "god"
-      ]
+      ],
+      "family": "god",
+      "familyZh": "神高达"
     },
     {
       "id": "bandai-mg-nu-ka",
@@ -299,7 +313,9 @@
         "卡版牛",
         "牛卡版",
         "牛verka"
-      ]
+      ],
+      "family": "nu",
+      "familyZh": "ν高达"
     },
     {
       "id": "bandai-mg-sazabi-ka",
@@ -332,7 +348,9 @@
         "卡沙",
         "卡版沙扎比",
         "卡沙扎比"
-      ]
+      ],
+      "family": "sazabi",
+      "familyZh": "沙扎比"
     },
     {
       "id": "bandai-mg-unicorn-ka",
@@ -367,7 +385,9 @@
         "卡独角兽",
         "卡版独角兽",
         "独角兽ka"
-      ]
+      ],
+      "family": "unicorn",
+      "familyZh": "独角兽高达"
     },
     {
       "id": "bandai-mg-exia",
@@ -402,7 +422,9 @@
         "exia",
         "gn001",
         "gn-001"
-      ]
+      ],
+      "family": "exia",
+      "familyZh": "能天使"
     },
     {
       "id": "bandai-pg-unicorn",
@@ -435,7 +457,9 @@
       "aliases": [
         "pg独角兽",
         "大独角兽"
-      ]
+      ],
+      "family": "unicorn",
+      "familyZh": "独角兽高达"
     },
     {
       "id": "bandai-pg-strike-freedom",
@@ -468,7 +492,9 @@
         "强袭自由",
         "sf",
         "自由"
-      ]
+      ],
+      "family": "strike-freedom",
+      "familyZh": "强袭自由"
     },
     {
       "id": "daban-pg-strike-freedom",
@@ -494,7 +520,9 @@
         "大班强自",
         "大班强袭自由",
         "大班pg"
-      ]
+      ],
+      "family": "strike-freedom",
+      "familyZh": "强袭自由"
     },
     {
       "id": "daban-mg-unicorn",
@@ -518,7 +546,9 @@
       "aliases": [
         "大班独角兽",
         "大班mg"
-      ]
+      ],
+      "family": "unicorn",
+      "familyZh": "独角兽高达"
     },
     {
       "id": "dragonmomoko-mg-exia",
@@ -543,7 +573,9 @@
         "桃子",
         "桃子能天使",
         "龙桃子"
-      ]
+      ],
+      "family": "exia",
+      "familyZh": "能天使"
     },
     {
       "id": "mn-100-wukong",
@@ -569,7 +601,9 @@
         "孙悟空",
         "猴子",
         "wukong"
-      ]
+      ],
+      "family": "wukong",
+      "familyZh": "孙悟空"
     },
     {
       "id": "mn-100-lubu",
@@ -594,7 +628,9 @@
       "aliases": [
         "吕布",
         "lubu"
-      ]
+      ],
+      "family": "lubu",
+      "familyZh": "吕布"
     },
     {
       "id": "in-100-judge",
@@ -620,7 +656,9 @@
         "审判女神",
         "审判",
         "judge"
-      ]
+      ],
+      "family": "judge",
+      "familyZh": "审判女神"
     },
     {
       "id": "jhj-100-baiqi",
@@ -645,7 +683,9 @@
       "aliases": [
         "白起",
         "baiqi"
-      ]
+      ],
+      "family": "baiqi",
+      "familyZh": "白起"
     }
   ]
 }

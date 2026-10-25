@@ -1,5 +1,4 @@
-import { convert } from './fx.js';
-import { getRates } from './fx.js';
+import { convert, getRates } from './fx.js';
 import { matchesKit, parseGrade, gradeOfLine } from './match.js';
 import { KITS_FILE } from './paths.js';
 import { readJson } from './store.js';
@@ -11,38 +10,50 @@ async function loadKits() {
   return data?.kits ?? [];
 }
 
-/**
- * 把用户输入的中文/型号，翻成数据源认得的检索词。
- *
- * BanzaiHobby 是英文站，直接搜「牛高达」只会返回一堆无关商品。
- * 所以先看输入能不能命中基准库（含胶圈俗称），命中就用它的英文检索词。
- */
 function fieldsOf(kit) {
   return [kit.nameZh, kit.nameEn, kit.nameJa, kit.code, ...(kit.aliases ?? []), ...(kit.tags ?? [])]
     .filter(Boolean)
     .map((f) => String(f).toLowerCase());
 }
 
-function resolveQuery(raw, kits) {
+/**
+ * 从商品标题里解析规格 —— 等级、比例、机体编号。
+ * 很多商品不在基准库里，但标题一定写着 RG / 1/144 / RX-93，
+ * 这些是买家分辨「我到底在看哪一款」的关键，不能只靠名字。
+ */
+const CODE_RE = /\b(RX|MSN|MS|RGM|RMS|AMX|AMS|ZGMF|GAT|GN|XXXG|GF|XVX|MBF|OZ|PMX|XM|F91)[- ]?\d{1,3}[A-Za-z0-9/-]*/i;
+
+function extractSpec(title) {
+  const text = String(title ?? '');
+  const grade = parseGrade(text);
+  const scale = (text.match(/\b1\/(?:144|100|60|48|35)\b/) ?? [null])[0];
+  const codeRaw = text.match(CODE_RE);
+  const code = codeRaw ? codeRaw[0].replace(/\s+/g, '-').toUpperCase() : null;
+  return { grade, scale, code };
+}
+
+const GRADE_ORDER = { HG: 0, RG: 1, MG: 2, PG: 3, EG: -1, FG: -1, SD: -2 };
+
+/**
+ * 一次查询可能对应多个规格：搜「牛高达」应该把 HG / RG / MG 一起端上来，
+ * 而不是因为命中基准库里的 RG 就只查 RG。
+ */
+function resolveTargets(raw, kits) {
   const q = raw.trim();
   const lower = q.toLowerCase();
 
-  // 先精确命中，避免「牛」被「海牛」抢走
   let hit = kits.find((k) => fieldsOf(k).some((f) => f === lower));
+  if (!hit) hit = kits.find((k) => fieldsOf(k).some((f) => f.includes(lower)));
 
-  if (!hit) {
-    hit = kits.find((k) => fieldsOf(k).some((f) => f.includes(lower)));
-  }
+  if (!hit) return [{ query: q, kit: null, strict: false }];
+  if (!hit.msrpJpy) return [{ query: null, kit: hit, strict: true }];
 
-  // 精确命中某一款且它有官方定价 → 只认这一款的通贩报价
-  // 否则搜「牛高达」会连 Hi-ν、透明限定、HG 版一起端上来，几算全乱
-  if (hit) {
-    if (!hit.msrpJpy) {
-      return { query: null, kit: hit, translated: true };
-    }
-    return { query: hit.query || hit.nameEn, kit: hit, translated: true, strict: true };
-  }
-  return { query: q, kit: null, translated: false, strict: false };
+  const group = hit.family ? kits.filter((k) => k.family === hit.family) : [hit];
+  const targets = group
+    .filter((k) => k.msrpJpy && (k.query || k.nameEn))
+    .map((k) => ({ query: k.query || k.nameEn, kit: k, strict: true }));
+
+  return targets.length > 0 ? targets : [{ query: hit.query || hit.nameEn, kit: hit, strict: true }];
 }
 
 function decorate(quote, kit, fx) {
@@ -50,6 +61,7 @@ function decorate(quote, kit, fx) {
   const msrpCny = kit?.msrpJpy ? convert(kit.msrpJpy, 'JPY', 'CNY', fx) : null;
   const suan = kit?.msrpJpy && cny ? cny / (kit.msrpJpy / 100) : null;
   const ratio = msrpCny && cny ? cny / msrpCny : null;
+  const parsed = extractSpec(quote.title);
 
   return {
     ...quote,
@@ -58,107 +70,123 @@ function decorate(quote, kit, fx) {
     suan: round(suan, 2),
     msrpJpy: kit?.msrpJpy ?? null,
     msrpCny: round(msrpCny, 2),
-    /** 相对「官价 × 实时汇率」的溢价，负数代表比汇率价还便宜 */
     vsFx: ratio === null ? null : round((ratio - 1) * 100, 1),
     kitName: kit?.nameZh ?? null,
-    kitCode: kit?.code ?? null,
-    kitLine: kit?.line ?? null,
+    spec: {
+      grade: kit?.line ? gradeOfLine(kit.line) : parsed.grade,
+      scale: kit?.scale ?? parsed.scale,
+      code: kit?.code ?? parsed.code,
+      /** db = 基准库（准），title = 从商品标题解析（可能缺） */
+      from: kit ? 'db' : 'title'
+    },
     sanity: ratio === null ? 'na' : ratio > 2 ? 'high' : ratio < 0.7 ? 'low' : 'ok'
   };
 }
 
-/** 同一个词 5 分钟内复用，避免反复打对方接口（搜索一次要 3~6 秒） */
-const cache = new Map();
-const CACHE_TTL = 5 * 60 * 1000;
+function fxView(fx) {
+  return {
+    jpyCny: round(convert(1, 'JPY', 'CNY', fx), 4),
+    date: fx.date,
+    live: fx.live !== false,
+    stale: Boolean(fx.stale)
+  };
+}
 
 /**
  * 实时查询：一次调用，当场去数据源拉，不读任何预存行情。
+ * 命中机体家族时，会把该家族下所有规格并发查一遍。
  */
 export async function searchAll(rawQuery) {
   const startedAt = Date.now();
   const kits = await loadKits();
-  const resolved = resolveQuery(rawQuery, kits);
+  const targets = resolveTargets(rawQuery, kits);
+  const fxPromise = getRates();
 
-  const matchedKit = resolved.kit
+  const familyKit = targets[0]?.kit ?? null;
+  const matchedKit = familyKit
     ? {
-        id: resolved.kit.id,
-        nameZh: resolved.kit.nameZh,
-        nameEn: resolved.kit.nameEn,
-        brandZh: resolved.kit.brandZh,
-        line: resolved.kit.line,
-        scale: resolved.kit.scale,
-        code: resolved.kit.code,
-        msrpJpy: resolved.kit.msrpJpy,
-        cloneOf: resolved.kit.cloneOf ?? null
+        family: familyKit.family ?? null,
+        familyZh: familyKit.familyZh ?? familyKit.nameZh,
+        brandZh: familyKit.brandZh,
+        specs: targets
+          .filter((t) => t.kit)
+          .map((t) => ({
+            id: t.kit.id,
+            nameZh: t.kit.nameZh,
+            line: t.kit.line,
+            scale: t.kit.scale,
+            code: t.kit.code,
+            msrpJpy: t.kit.msrpJpy
+          }))
       }
     : null;
 
-  const fxPromise = getRates();
-
-  // KO / 国模没有日本货源，抓也抓不到，直接告诉用户去国内平台看
-  if (!resolved.query) {
+  // KO / 国模：日本站没有货源
+  if (targets.every((t) => !t.query)) {
     const fx = await fxPromise;
     return {
       query: rawQuery.trim(),
       usedQuery: null,
-      translated: resolved.translated,
       matchedKit,
-      fx: {
-        jpyCny: round(convert(1, 'JPY', 'CNY', fx), 4),
-        date: fx.date,
-        live: fx.live !== false,
-        stale: Boolean(fx.stale)
-      },
+      fx: fxView(fx),
       count: 0,
+      candidateCount: 0,
       elapsedMs: Date.now() - startedAt,
       note: '这款是国模 / KO，日本站没有货源，只能在国内平台查。',
       results: []
     };
   }
 
-  // 1) 在目录里找候选
-  let candidates = await searchCatalog(resolved.query, { limit: 80 });
+  // 每个规格并发查：目录找候选 → 过滤 → 取前两条实时确认
+  let candidateTotal = 0;
+  const perTarget = await Promise.all(
+    targets.map(async (t) => {
+      if (!t.query) return [];
+      try {
+        let cands = await searchCatalog(t.query, { limit: 40 });
+        cands = cands.filter((p) => !isNoisyVersion(p.title));
+        if (t.strict && t.kit) cands = cands.filter((p) => matchesKit(t.kit, p.title));
+        candidateTotal += cands.length;
 
-  // 2) 过滤限定版；精确命中某款时，再按等级严格筛一遍
-  candidates = candidates.filter((p) => !isNoisyVersion(p.title));
-  if (resolved.strict && resolved.kit) {
-    candidates = candidates.filter((p) => matchesKit(resolved.kit, p.title));
-  }
-
-  // 3) 只对排在前面的候选，逐条实时确认此刻的价格
-  const top = candidates.slice(0, 5);
-  const live = await Promise.all(top.map((p) => fetchLive(p.handle).catch(() => null)));
-  const fx = await fxPromise;
-
-  const results = live
-    .filter(Boolean)
-    .map((quote) => {
-      const kit = kits.find((k) => matchesKit(k, quote.title)) ?? null;
-      return decorate(quote, kit, fx);
+        const top = cands.slice(0, 2);
+        const live = await Promise.all(top.map((p) => fetchLive(p.handle).catch(() => null)));
+        return live.filter(Boolean);
+      } catch {
+        return [];
+      }
     })
-    .sort((a, b) => (a.cny ?? Infinity) - (b.cny ?? Infinity));
+  );
+
+  const fx = await fxPromise;
+  const seen = new Set();
+
+  const results = perTarget
+    .flat()
+    .filter((q) => {
+      if (!q.url || seen.has(q.url)) return false;
+      seen.add(q.url);
+      return true;
+    })
+    .map((q) => decorate(q, kits.find((k) => matchesKit(k, q.title)) ?? null, fx))
+    .sort((a, b) => {
+      const ga = GRADE_ORDER[a.spec.grade] ?? 9;
+      const gb = GRADE_ORDER[b.spec.grade] ?? 9;
+      if (ga !== gb) return ga - gb;
+      return (a.cny ?? Infinity) - (b.cny ?? Infinity);
+    });
 
   return {
     query: rawQuery.trim(),
-    usedQuery: resolved.query,
-    translated: resolved.translated,
+    usedQuery: targets.filter((t) => t.query).map((t) => t.query).join(' | '),
     matchedKit,
-    fx: {
-      jpyCny: round(convert(1, 'JPY', 'CNY', fx), 4),
-      date: fx.date,
-      live: fx.live !== false,
-      stale: Boolean(fx.stale)
-    },
+    fx: fxView(fx),
     catalog: catalogInfo(),
-    candidateCount: candidates.length,
+    candidateCount: candidateTotal,
+    specCount: targets.length,
     count: results.length,
     elapsedMs: Date.now() - startedAt,
     results
   };
 }
 
-export const QUERY_HELP = {
-  grades: ['PG', 'MG', 'RG', 'HG', 'EG'],
-  gradeOfLine,
-  parseGrade
-};
+export const QUERY_HELP = { grades: ['PG', 'MG', 'RG', 'HG', 'EG'], gradeOfLine, parseGrade };

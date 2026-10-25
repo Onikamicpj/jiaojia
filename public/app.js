@@ -46,6 +46,28 @@ function agoText(iso) {
 
 /* ---------- 渲染 ---------- */
 
+const GRADE_TAG_COLOR = {
+  HG: '#8a8f98',
+  RG: '#3dd6c4',
+  MG: '#6ea8fe',
+  PG: '#ff6b35',
+  EG: '#8a8f98',
+  FG: '#8a8f98',
+  SD: '#a78bfa'
+};
+
+function specTags(spec) {
+  if (!spec) return '';
+  const out = [];
+  if (spec.grade) {
+    const c = GRADE_TAG_COLOR[spec.grade] ?? '#8a8f98';
+    out.push(`<span class="spec spec-grade" style="color:${c};border-color:${c}44">${esc(spec.grade)}</span>`);
+  }
+  if (spec.scale) out.push(`<span class="spec">${esc(spec.scale)}</span>`);
+  if (spec.code) out.push(`<span class="spec">${esc(spec.code)}</span>`);
+  return out.join('');
+}
+
 function renderRows(data) {
   const rows = data.results.map((r) => {
     const g = gradeOf(r.suan);
@@ -59,6 +81,7 @@ function renderRows(data) {
 
     return `<article class="row">
       <div class="row-main">
+        <div class="row-spec">${specTags(r.spec)}</div>
         <div class="row-title">${esc(r.title)}</div>
         <div class="row-meta">
           <span class="src">${esc(r.sourceName)}</span>
@@ -174,37 +197,44 @@ async function doAppraise(kitId, title, price, currency) {
 
 function renderSummary(data) {
   const k = data.matchedKit;
-  const best = data.results[0] ?? null;
+  const results = data.results;
+  const multi = (k?.specs?.length ?? 1) > 1;
 
   const head = `<div class="sumline">
-    ${k ? `匹配 <b>${esc(fullNameOf(k))}</b>` : `按 <b>${esc(data.usedQuery)}</b> 检索`}
+    ${k ? `匹配 <b>${esc(k.brandZh)} ${esc(k.familyZh)}</b>` : `按 <b>${esc(data.usedQuery)}</b> 检索`}
+    ${multi ? `<span class="sep">·</span>${k.specs.length} 个规格` : ''}
     <span class="sep">·</span>候选 ${data.candidateCount ?? 0} 条
-    <span class="sep">·</span>实时确认 ${data.count} 条
+    <span class="sep">·</span>实时确认 ${results.length} 条
     <span class="sep">·</span>${data.elapsedMs} ms
   </div>`;
 
-  if (!k?.msrpJpy || !best) return head;
+  if (results.length === 0) return head;
+
+  // 多规格时不同价位的绝对值不可比，改看谁的几算最优；
+  // 但「价格偏低 / 疑似限定」的不参与，那种数字会误导
+  const healthy = results.filter((r) => r.sanity === 'ok' || r.sanity === 'na');
+  const pool = healthy.length > 0 ? healthy : results;
+  const best = pool.reduce((a, b) => ((a.suan ?? 99) <= (b.suan ?? 99) ? a : b));
+  if (!best?.msrpJpy || best.suan === null || best.suan === undefined) return head;
 
   const g = gradeOf(best.suan);
-  const color = g ? GRADE_COLOR[g.key] : 'var(--dim)';
-  const msrpCny = best.msrpCny;
-  const gap = best.vsFx;
+  const color = GRADE_COLOR[g?.key ?? 'normal'];
 
   return `${head}
   <div class="bench">
     <div class="bench-cell">
-      <div class="bench-label">官方定价</div>
-      <div class="bench-value">¥${Number(k.msrpJpy).toLocaleString('ja-JP')}</div>
-      <div class="bench-sub">折合 ${fmtCny(msrpCny)}</div>
+      <div class="bench-label">官方定价 · ${esc(best.spec?.grade ?? '')} ${esc(best.spec?.scale ?? '')}</div>
+      <div class="bench-value">¥${Number(best.msrpJpy).toLocaleString('ja-JP')}</div>
+      <div class="bench-sub">折合 ${fmtCny(best.msrpCny)}</div>
     </div>
     <div class="bench-arrow">→</div>
     <div class="bench-cell">
-      <div class="bench-label">此刻最低</div>
+      <div class="bench-label">${multi ? '几算最优的一条' : '此刻最低'}</div>
       <div class="bench-value" style="color:${color}">${fmtCny(best.cny)}</div>
       <div class="bench-sub">${best.suan.toFixed(1)} 算 · ${g ? g.zh : ''}</div>
     </div>
     <div class="bench-gap" style="color:${color}">
-      ${gap === null || gap === undefined ? '—' : `${gap > 0 ? '+' : ''}${gap}%`}
+      ${best.vsFx === null || best.vsFx === undefined ? '—' : `${best.vsFx > 0 ? '+' : ''}${best.vsFx}%`}
       <span>相对汇率价</span>
     </div>
   </div>`;
@@ -230,11 +260,11 @@ function fullNameOf(kit) {
 
 function renderEmpty(data) {
   const k = data.matchedKit;
-  const isNonBandai = k && !k.msrpJpy;
+  const isNonBandai = k && !(k.specs ?? []).some((s) => s.msrpJpy);
 
   if (isNonBandai) {
     return `<div class="empty">
-      <p><b>${esc(fullNameOf(k))}</b> 是国模 / KO，日本站没有货源。</p>
+      <p><b>${esc(k.brandZh)} ${esc(k.familyZh)}</b> 是国模 / KO，日本站没有货源。</p>
       <p>用下面国内平台的按钮直接搜，看到的就是实时价。</p>
     </div>`;
   }

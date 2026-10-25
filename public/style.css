@@ -216,6 +216,20 @@ body {
 .row:hover { border-color: var(--line-2); background: var(--surface-2); }
 
 .row-title { font-size: 13.5px; font-weight: 500; line-height: 1.45; color: var(--text); }
+
+.row-spec { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+
+.spec {
+  padding: 1px 6px;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.spec-grade { font-weight: 600; }
 .row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 5px; font-size: 11px; color: var(--faint); }
 .row-meta .src { color: var(--dim); }
 

@@ -139,8 +139,15 @@ export async function searchCatalog(keyword, { limit = 60 } = {}) {
  * 单品实时价格：调 Shopify 单品 JSON，拿「此刻」的价格和库存。
  * 目录是隔几小时刷的，但价格必须当场确认，这才叫实时查询。
  */
+const liveCache = new Map();
+const LIVE_TTL_MS = 5 * 60 * 1000;
+
 export async function fetchLive(handle) {
   if (!handle) return null;
+
+  const cached = liveCache.get(handle);
+  if (cached && Date.now() - cached.at < LIVE_TTL_MS) return cached.data;
+
   const data = await fetchJson(`${BASE}/products/${handle}.json`, { timeout: 15000, retries: 0 });
   const product = data?.product;
   if (!product) return null;
@@ -152,7 +159,7 @@ export async function fetchLive(handle) {
   const tags = Array.isArray(product.tags) ? product.tags : [];
   const used = tags.some((t) => /preloved|used|中古/i.test(t));
 
-  return {
+  const quote = {
     kitId: null,
     source: 'banzai',
     sourceName: 'BanzaiHobby',
@@ -167,6 +174,9 @@ export async function fetchLive(handle) {
     note: used ? '中古（Preloved）' : null,
     liveAt: product.updated_at ?? nowIso()
   };
+
+  liveCache.set(handle, { at: Date.now(), data: quote });
+  return quote;
 }
 
 function toQuote(product, kit) {
