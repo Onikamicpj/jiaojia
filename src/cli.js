@@ -1,6 +1,7 @@
 #!/usr/bin/env node
+import { access } from 'node:fs/promises';
 import { getRates, rateBetween } from './core/fx.js';
-import { MANUAL_CSV } from './core/paths.js';
+import { MANUAL_CSV, QUOTES_FILE } from './core/paths.js';
 import { round } from './core/util.js';
 import { loadKits } from './core/state.js';
 import { startServer } from './server.js';
@@ -18,6 +19,18 @@ function flag(name, fallback = null) {
 
 async function cmdServe() {
   const port = Number(flag('port', 5173));
+
+  let hasCache = true;
+  try {
+    await access(QUOTES_FILE);
+  } catch {
+    hasCache = false;
+  }
+  if (!hasCache) {
+    console.log('  还没有报价缓存，页面会只有基准库、价格全空。');
+    console.log('  先跑一次：node src/cli.js collect\n');
+  }
+
   startServer({ port });
 }
 
