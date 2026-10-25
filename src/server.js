@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { PUBLIC_DIR } from './core/paths.js';
+import { searchAll } from './core/search.js';
 import { buildState, loadKits } from './core/state.js';
 import { collect } from './sources/index.js';
 
@@ -49,6 +50,14 @@ export function createServer() {
     const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 
     try {
+      if (url.pathname === '/api/search' && req.method === 'GET') {
+        const q = (url.searchParams.get('q') ?? '').trim();
+        if (!q) return sendJson(res, 400, { error: '缺少 q 参数' });
+        if (q.length > 60) return sendJson(res, 400, { error: '关键词太长' });
+        const result = await searchAll(q);
+        return sendJson(res, 200, result);
+      }
+
       if (url.pathname === '/api/state' && req.method === 'GET') {
         const state = await buildState();
         return sendJson(res, 200, state);

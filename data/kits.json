@@ -24,9 +24,32 @@
       "msrpJpy": 1000,
       "released": "2020-07",
       "query": "HGUC 1/144 RX-78-2 Gundam",
-      "matchAll": ["rx-78-2"],
-      "matchNone": ["rg", "mg", "pg", "ver.ka", "1/100", "1/60", "g-armor", "g-fighter", "perfect"],
-      "tags": ["入门", "UC", "元祖"]
+      "matchAll": [
+        "rx-78-2"
+      ],
+      "matchNone": [
+        "rg",
+        "mg",
+        "pg",
+        "ver.ka",
+        "1/100",
+        "1/60",
+        "g-armor",
+        "g-fighter",
+        "perfect"
+      ],
+      "tags": [
+        "入门",
+        "UC",
+        "元祖"
+      ],
+      "aliases": [
+        "元祖",
+        "初代",
+        "初代高达",
+        "rx78",
+        "78"
+      ]
     },
     {
       "id": "bandai-hg-aerial",
@@ -41,9 +64,28 @@
       "msrpJpy": 1300,
       "released": "2022-10",
       "query": "HG 1/144 Gundam Aerial",
-      "matchAll": ["1/144", "aerial"],
-      "matchNone": ["rebuild", "1/100", "full mechanics", "fm"],
-      "tags": ["水星的魔女", "入门", "热门"]
+      "matchAll": [
+        "1/144",
+        "aerial"
+      ],
+      "matchNone": [
+        "rebuild",
+        "1/100",
+        "full mechanics",
+        "fm"
+      ],
+      "tags": [
+        "水星的魔女",
+        "入门",
+        "热门"
+      ],
+      "aliases": [
+        "风灵",
+        "风灵高达",
+        "魔女",
+        "aerial",
+        "xvx"
+      ]
     },
     {
       "id": "bandai-rg-nu",
@@ -58,9 +100,28 @@
       "msrpJpy": 4500,
       "released": "2019-08",
       "query": "RG 1/144 Nu Gundam",
-      "matchAll": ["1/144", "nu gundam"],
-      "matchNone": ["hi-nu", "double fin", "1/100", "1/60"],
-      "tags": ["UC", "旗舰", "热门"]
+      "matchAll": [
+        "1/144",
+        "nu gundam"
+      ],
+      "matchNone": [
+        "hi-nu",
+        "double fin",
+        "1/100",
+        "1/60"
+      ],
+      "tags": [
+        "UC",
+        "旗舰",
+        "热门"
+      ],
+      "aliases": [
+        "牛",
+        "牛高达",
+        "ν高达",
+        "rx93",
+        "rx-93"
+      ]
     },
     {
       "id": "bandai-rg-sazabi",
@@ -75,9 +136,27 @@
       "msrpJpy": 4500,
       "released": "2018-08",
       "query": "RG 1/144 Sazabi",
-      "matchAll": ["1/144", "sazabi"],
-      "matchNone": ["1/100", "1/60", "nightingale"],
-      "tags": ["UC", "旗舰", "热门"]
+      "matchAll": [
+        "1/144",
+        "sazabi"
+      ],
+      "matchNone": [
+        "1/100",
+        "1/60",
+        "nightingale"
+      ],
+      "tags": [
+        "UC",
+        "旗舰",
+        "热门"
+      ],
+      "aliases": [
+        "沙扎比",
+        "萨扎比",
+        "sazabi",
+        "msn04",
+        "msn-04"
+      ]
     },
     {
       "id": "bandai-rg-unicorn",
@@ -92,9 +171,28 @@
       "msrpJpy": 3800,
       "released": "2017-08",
       "query": "RG 1/144 Unicorn Gundam",
-      "matchAll": ["1/144", "unicorn"],
-      "matchNone": ["banshee", "phenex", "1/100", "1/60", "full armor"],
-      "tags": ["UC", "热门"]
+      "matchAll": [
+        "1/144",
+        "unicorn"
+      ],
+      "matchNone": [
+        "banshee",
+        "phenex",
+        "1/100",
+        "1/60",
+        "full armor"
+      ],
+      "tags": [
+        "UC",
+        "热门"
+      ],
+      "aliases": [
+        "独角兽",
+        "幼女控",
+        "unicorn",
+        "rx0",
+        "rx-0"
+      ]
     },
     {
       "id": "bandai-rg-strike",
@@ -109,9 +207,33 @@
       "msrpJpy": 1250,
       "released": "2011-04",
       "query": "RG 1/144 Aile Strike Gundam",
-      "matchAll": ["1/144", "strike"],
-      "matchNone": ["freedom", "1/100", "1/60", "skygrasper", "perfect", "build strike", "strike noir", "strike rouge", "launcher", "sword"],
-      "tags": ["SEED", "入门"]
+      "matchAll": [
+        "1/144",
+        "strike"
+      ],
+      "matchNone": [
+        "freedom",
+        "1/100",
+        "1/60",
+        "skygrasper",
+        "perfect",
+        "build strike",
+        "strike noir",
+        "strike rouge",
+        "launcher",
+        "sword"
+      ],
+      "tags": [
+        "SEED",
+        "入门"
+      ],
+      "aliases": [
+        "强袭",
+        "空战强袭",
+        "空霸",
+        "aile",
+        "strike"
+      ]
     },
     {
       "id": "bandai-rg-god",
@@ -126,9 +248,24 @@
       "msrpJpy": 3500,
       "released": "2022-08",
       "query": "RG 1/144 God Gundam",
-      "matchAll": ["1/144", "god gundam"],
-      "matchNone": ["1/100", "1/60", "burning"],
-      "tags": ["G武斗传", "旗舰"]
+      "matchAll": [
+        "1/144",
+        "god gundam"
+      ],
+      "matchNone": [
+        "1/100",
+        "1/60",
+        "burning"
+      ],
+      "tags": [
+        "G武斗传",
+        "旗舰"
+      ],
+      "aliases": [
+        "神高达",
+        "神威",
+        "god"
+      ]
     },
     {
       "id": "bandai-mg-nu-ka",
@@ -143,9 +280,26 @@
       "msrpJpy": 7000,
       "released": "2012-12",
       "query": "MG 1/100 Nu Gundam Ver.Ka",
-      "matchAll": ["1/100", "nu gundam", "ver.ka"],
-      "matchNone": ["hi-nu", "1/60"],
-      "tags": ["UC", "Ver.Ka", "热门"]
+      "matchAll": [
+        "1/100",
+        "nu gundam",
+        "ver.ka"
+      ],
+      "matchNone": [
+        "hi-nu",
+        "1/60"
+      ],
+      "tags": [
+        "UC",
+        "Ver.Ka",
+        "热门"
+      ],
+      "aliases": [
+        "卡牛",
+        "卡版牛",
+        "牛卡版",
+        "牛verka"
+      ]
     },
     {
       "id": "bandai-mg-sazabi-ka",
@@ -160,9 +314,25 @@
       "msrpJpy": 9000,
       "released": "2013-12",
       "query": "MG 1/100 Sazabi Ver.Ka",
-      "matchAll": ["1/100", "sazabi", "ver.ka"],
-      "matchNone": ["1/60", "nightingale"],
-      "tags": ["UC", "Ver.Ka", "旗舰"]
+      "matchAll": [
+        "1/100",
+        "sazabi",
+        "ver.ka"
+      ],
+      "matchNone": [
+        "1/60",
+        "nightingale"
+      ],
+      "tags": [
+        "UC",
+        "Ver.Ka",
+        "旗舰"
+      ],
+      "aliases": [
+        "卡沙",
+        "卡版沙扎比",
+        "卡沙扎比"
+      ]
     },
     {
       "id": "bandai-mg-unicorn-ka",
@@ -177,9 +347,27 @@
       "msrpJpy": 7500,
       "released": "2013-03",
       "query": "MG 1/100 Unicorn Gundam Ver.Ka",
-      "matchAll": ["1/100", "unicorn", "ver.ka"],
-      "matchNone": ["banshee", "phenex", "1/60", "full armor"],
-      "tags": ["UC", "Ver.Ka", "热门"]
+      "matchAll": [
+        "1/100",
+        "unicorn",
+        "ver.ka"
+      ],
+      "matchNone": [
+        "banshee",
+        "phenex",
+        "1/60",
+        "full armor"
+      ],
+      "tags": [
+        "UC",
+        "Ver.Ka",
+        "热门"
+      ],
+      "aliases": [
+        "卡独角兽",
+        "卡版独角兽",
+        "独角兽ka"
+      ]
     },
     {
       "id": "bandai-mg-exia",
@@ -194,9 +382,27 @@
       "msrpJpy": 3800,
       "released": "2009-07",
       "query": "MG 1/100 Gundam Exia",
-      "matchAll": ["1/100", "exia"],
-      "matchNone": ["1/60", "dark matter", "repair", "ignition"],
-      "tags": ["00", "入门"]
+      "matchAll": [
+        "1/100",
+        "exia"
+      ],
+      "matchNone": [
+        "1/60",
+        "dark matter",
+        "repair",
+        "ignition"
+      ],
+      "tags": [
+        "00",
+        "入门"
+      ],
+      "aliases": [
+        "能天使",
+        "能天",
+        "exia",
+        "gn001",
+        "gn-001"
+      ]
     },
     {
       "id": "bandai-pg-unicorn",
@@ -211,9 +417,25 @@
       "msrpJpy": 20000,
       "released": "2014-12",
       "query": "PG 1/60 Unicorn Gundam",
-      "matchAll": ["1/60", "unicorn"],
-      "matchNone": ["banshee", "phenex", "1/100", "led"],
-      "tags": ["UC", "PG", "旗舰"]
+      "matchAll": [
+        "1/60",
+        "unicorn"
+      ],
+      "matchNone": [
+        "banshee",
+        "phenex",
+        "1/100",
+        "led"
+      ],
+      "tags": [
+        "UC",
+        "PG",
+        "旗舰"
+      ],
+      "aliases": [
+        "pg独角兽",
+        "大独角兽"
+      ]
     },
     {
       "id": "bandai-pg-strike-freedom",
@@ -228,9 +450,25 @@
       "msrpJpy": 25000,
       "released": "2010-12",
       "query": "PG 1/60 Strike Freedom Gundam",
-      "matchAll": ["1/60", "strike freedom"],
-      "matchNone": ["1/100", "1/144"],
-      "tags": ["SEED", "PG", "旗舰"]
+      "matchAll": [
+        "1/60",
+        "strike freedom"
+      ],
+      "matchNone": [
+        "1/100",
+        "1/144"
+      ],
+      "tags": [
+        "SEED",
+        "PG",
+        "旗舰"
+      ],
+      "aliases": [
+        "强自",
+        "强袭自由",
+        "sf",
+        "自由"
+      ]
     },
     {
       "id": "daban-pg-strike-freedom",
@@ -248,7 +486,15 @@
       "query": null,
       "matchAll": [],
       "matchNone": [],
-      "tags": ["KO", "大比例"]
+      "tags": [
+        "KO",
+        "大比例"
+      ],
+      "aliases": [
+        "大班强自",
+        "大班强袭自由",
+        "大班pg"
+      ]
     },
     {
       "id": "daban-mg-unicorn",
@@ -266,7 +512,13 @@
       "query": null,
       "matchAll": [],
       "matchNone": [],
-      "tags": ["KO"]
+      "tags": [
+        "KO"
+      ],
+      "aliases": [
+        "大班独角兽",
+        "大班mg"
+      ]
     },
     {
       "id": "dragonmomoko-mg-exia",
@@ -284,7 +536,14 @@
       "query": null,
       "matchAll": [],
       "matchNone": [],
-      "tags": ["KO"]
+      "tags": [
+        "KO"
+      ],
+      "aliases": [
+        "桃子",
+        "桃子能天使",
+        "龙桃子"
+      ]
     },
     {
       "id": "mn-100-wukong",
@@ -302,7 +561,15 @@
       "query": null,
       "matchAll": [],
       "matchNone": [],
-      "tags": ["国模", "原创"]
+      "tags": [
+        "国模",
+        "原创"
+      ],
+      "aliases": [
+        "孙悟空",
+        "猴子",
+        "wukong"
+      ]
     },
     {
       "id": "mn-100-lubu",
@@ -320,7 +587,14 @@
       "query": null,
       "matchAll": [],
       "matchNone": [],
-      "tags": ["国模", "原创"]
+      "tags": [
+        "国模",
+        "原创"
+      ],
+      "aliases": [
+        "吕布",
+        "lubu"
+      ]
     },
     {
       "id": "in-100-judge",
@@ -338,7 +612,15 @@
       "query": null,
       "matchAll": [],
       "matchNone": [],
-      "tags": ["国模", "原创"]
+      "tags": [
+        "国模",
+        "原创"
+      ],
+      "aliases": [
+        "审判女神",
+        "审判",
+        "judge"
+      ]
     },
     {
       "id": "jhj-100-baiqi",
@@ -356,7 +638,14 @@
       "query": null,
       "matchAll": [],
       "matchNone": [],
-      "tags": ["国模", "原创"]
+      "tags": [
+        "国模",
+        "原创"
+      ],
+      "aliases": [
+        "白起",
+        "baiqi"
+      ]
     }
   ]
 }

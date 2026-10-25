@@ -61,6 +61,8 @@ function isNoisyVersion(title) {
   return VERSION_NOISE.some((re) => re.test(title));
 }
 
+export { isNoisyVersion };
+
 function cleanUrl(raw) {
   if (!raw) return null;
   const path = String(raw).split('?')[0];
@@ -75,6 +77,11 @@ function cleanUrl(raw) {
  * 整目录 2500 条只需 10 次请求，本地匹配没有召回损耗。
  */
 let catalogCache = null;
+let catalogFetchedAt = null;
+
+export function catalogInfo() {
+  return { count: catalogCache?.length ?? 0, fetchedAt: catalogFetchedAt };
+}
 
 export async function loadCatalog({ force = false } = {}) {
   const cached = await readJson(CATALOG_FILE, null);
@@ -82,6 +89,7 @@ export async function loadCatalog({ force = false } = {}) {
 
   if (cached && !force && age < CATALOG_TTL_MS) {
     catalogCache = cached.products;
+    catalogFetchedAt = cached.fetchedAt;
     return { products: cached.products, fetchedAt: cached.fetchedAt, cached: true };
   }
 
@@ -99,8 +107,66 @@ export async function loadCatalog({ force = false } = {}) {
   const payload = { fetchedAt: nowIso(), count: products.length, products };
   await writeJson(CATALOG_FILE, payload);
   catalogCache = products;
+  catalogFetchedAt = payload.fetchedAt;
 
   return { products, fetchedAt: payload.fetchedAt, cached: false };
+}
+
+/**
+ * 关键词检索：在已缓存的目录里本地过滤。
+ * 它的搜索接口（suggest）质量极差 —— 搜「RG Nu Gundam」会返回超合金、铁奥。
+ * 所以改成自己维护目录 + 本地精确匹配。
+ */
+export async function searchCatalog(keyword, { limit = 60 } = {}) {
+  const products = catalogCache ?? (await loadCatalog()).products;
+  const tokens = String(keyword)
+    .toLowerCase()
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t && !/^\d+\/\d+$/.test(t)); // 标题常不写比例，比例交给等级校验
+
+  if (tokens.length === 0) return [];
+
+  return products
+    .filter((p) => {
+      const title = p.title.toLowerCase();
+      return tokens.every((tok) => title.includes(tok));
+    })
+    .slice(0, limit);
+}
+
+/**
+ * 单品实时价格：调 Shopify 单品 JSON，拿「此刻」的价格和库存。
+ * 目录是隔几小时刷的，但价格必须当场确认，这才叫实时查询。
+ */
+export async function fetchLive(handle) {
+  if (!handle) return null;
+  const data = await fetchJson(`${BASE}/products/${handle}.json`, { timeout: 15000, retries: 0 });
+  const product = data?.product;
+  if (!product) return null;
+
+  const variant = Array.isArray(product.variants) ? product.variants[0] : null;
+  const price = Number(variant?.price ?? product.price);
+  if (!Number.isFinite(price) || price <= 0) return null;
+
+  const tags = Array.isArray(product.tags) ? product.tags : [];
+  const used = tags.some((t) => /preloved|used|中古/i.test(t));
+
+  return {
+    kitId: null,
+    source: 'banzai',
+    sourceName: 'BanzaiHobby',
+    region: 'JP',
+    title: product.title,
+    price,
+    currency: 'JPY',
+    available: variant?.available ?? true,
+    condition: used ? 'used' : 'new',
+    url: `${BASE}/products/${handle}`,
+    image: product.image?.src ?? product.images?.[0]?.src ?? null,
+    note: used ? '中古（Preloved）' : null,
+    liveAt: product.updated_at ?? nowIso()
+  };
 }
 
 function toQuote(product, kit) {
@@ -113,7 +179,7 @@ function toQuote(product, kit) {
   const available = product.available ?? variant?.available ?? true;
 
   return {
-    kitId: kit.id,
+    kitId: kit?.id ?? null,
     source: 'banzai',
     sourceName: 'BanzaiHobby',
     region: 'JP',
@@ -129,6 +195,10 @@ function toQuote(product, kit) {
   };
 }
 
+/**
+ * 按关键词实时搜索。这是「查询」的主路径 —— 不需要预先抓任何东西。
+ * BanzaiHobby 的 suggest 接口会直接返回商品标题、价格、库存、链接。
+ */
 export const banzai = {
   id: 'banzai',
   name: 'BanzaiHobby',

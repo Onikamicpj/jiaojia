@@ -3,64 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>胶价雷达 · 万代 / 国模 / KO 比价</title>
+<title>胶价雷达 · 实时查胶价</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand">
+  <a class="brand" href="/">
     <span class="brand-mark"></span>
     <span class="brand-name">胶价雷达</span>
-    <span class="brand-sub">JIAOJIA</span>
-  </div>
-
-  <div class="topbar-right">
-    <div class="fxbox" id="fxbox">
-      <span class="fx-label">JPY → CNY</span>
-      <span class="fx-value" id="fxValue">—</span>
-      <span class="fx-note" id="fxNote"></span>
-    </div>
-    <button class="btn" id="refreshBtn" type="button">抓取最新</button>
+  </a>
+  <div class="fxbox">
+    <span class="fx-label">1 円</span>
+    <span class="fx-value" id="fxValue">—</span>
+    <span class="fx-note" id="fxNote"></span>
   </div>
 </header>
 
 <main class="shell">
 
-  <section class="intro">
-    <h1>一只模型，<em>到底几算</em>？</h1>
-    <p class="lede">
-      官方定价 × 实时汇率 = 应有价格。你实际付的钱除以日元定价的百分之一，就是「几算」。
-      5 算以内算好价，6 算以上该再等等。
-    </p>
-    <div class="legend">
-      <span class="dot good"></span><span>≤4.5 算 好价</span>
-      <span class="dot normal"></span><span>4.5–5.5 正常</span>
-      <span class="dot high"></span><span>5.5–6.5 偏高</span>
-      <span class="dot bad"></span><span>&gt;6.5 很贵</span>
+  <section class="hero">
+    <h1>查一只，<em>此刻</em>多少钱。</h1>
+    <p class="lede">输入机体名，当场去日本零售站抓一次真实报价，按实时汇率折成人民币，算出「几算」。</p>
+
+    <form class="searchbar" id="searchForm" autocomplete="off">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
+      <input id="q" type="search" placeholder="牛高达 / 独角兽 / 大班 / RG 沙扎比" aria-label="搜索模型">
+      <button type="submit" id="goBtn">查价</button>
+    </form>
+
+    <div class="hotline" id="hotline">
+      <span class="hot-label">常查</span>
+      <button class="hot" data-q="牛高达">牛高达</button>
+      <button class="hot" data-q="沙扎比">沙扎比</button>
+      <button class="hot" data-q="独角兽">独角兽</button>
+      <button class="hot" data-q="能天使">能天使</button>
+      <button class="hot" data-q="强袭自由">强袭自由</button>
+      <button class="hot" data-q="元祖">元祖</button>
     </div>
   </section>
 
-  <section class="controls">
-    <label class="search">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
-      <input id="q" type="search" placeholder="搜机体、型号、品牌…  例：ν / 大班 / RG" autocomplete="off">
-    </label>
-    <div class="chips" id="brandChips"></div>
+  <section class="status" id="status"></section>
+
+  <section class="result" id="result">
+    <div class="hint">
+      <p>能实时查到的：日本零售站（BanzaiHobby）的现货与中古报价，逐条确认库存。</p>
+      <p>查不到的：拼多多、京东、淘宝、闲鱼。这些平台要登录才有价，程序读不到 —— 点下面的按钮自己看，那是实时价。</p>
+    </div>
   </section>
 
-  <div class="statline" id="statline"></div>
-
-  <section class="grid" id="list">
-    <div class="loading">正在载入…</div>
+  <section class="platforms" id="platforms" hidden>
+    <div class="plat-head">国内平台实时价 <span>程序抓不到，点开自己看</span></div>
+    <div class="plat-btns" id="platBtns"></div>
   </section>
 
   <footer class="foot">
-    <p>
-      数据来源：万代官方定价（人工维护）+ BanzaiHobby 实时目录 + 人工录入（淘宝 / 闲鱼 / 拼多多）。
-      国模与 KO 无公开价格接口，靠 CSV 维护。
-    </p>
-    <p class="foot-dim">报价可能滞后或缺货，购买前请以商家页面为准。本项目与万代、各品牌无关联。</p>
+    <p>官方定价为人工维护，汇率来自 ECB（frankfurter.dev），日本报价来自 BanzaiHobby 公开接口。</p>
+    <p class="foot-dim">价格仅供参考，购买前请以商家页面为准。本项目与万代及各品牌无关联。</p>
   </footer>
 
 </main>
