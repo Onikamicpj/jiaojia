@@ -1,0 +1,27 @@
+{
+  "name": "jiaojia",
+  "version": "0.1.0",
+  "private": false,
+  "description": "胶价雷达 — 万代 / 国模 / KO 拼装模型实时比价，支持实时汇率与「几算」换算",
+  "type": "module",
+  "bin": {
+    "jiaojia": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js serve",
+    "collect": "node src/cli.js collect",
+    "fx": "node src/cli.js fx"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "gunpla",
+    "gundam",
+    "price-tracker",
+    "price-comparison",
+    "scale-model",
+    "exchange-rate"
+  ],
+  "license": "MIT"
+}
