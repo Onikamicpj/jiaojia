@@ -6,7 +6,7 @@
   const EXCLUDE_GRADES = { SD: 1, SDW: 1, SDCS: 1, BB: 1, EG: 1, FG: 1 };
 
   const LIMITED_RE = /限定|ガンダムベース|セブン-イレブン|プレミアムバンダイ|ホビーオンライン|受注|抽選|イベント|記念|特装|豪華版|クリアカラー|メッキ|チタニウム|エクストラフィニッシュ|劇場|初回|GFT|GPB|エコプラ|リサイクル|コーティング/i;
-  const ACCESSORY_RE = /用\s*ブースター|ブースターベッド|用\s*ベース|ディスプレイベース|武器セット|オプションパーツ/;
+  const ACCESSORY_RE = /用\s*ブースター|ブースターベッド|用\s*ベース|ディスプレイベース|武器セット|オプションパーツ|クリアファイル|ファイル|ポスター|Tシャツ|マグカップ|キーホルダー|ストラップ/;
 
   const PAGE = 24;
   let allItems = [];
@@ -22,12 +22,14 @@
       .toLowerCase();
   }
 
-  const ALIAS_KEYS = Object.keys(window.__ALIAS__).sort((a, b) => b.length - a.length);
+  const ALIAS = window.__ALIAS__;
+  const ALIAS_KEYS = Object.keys(ALIAS).sort((a, b) => b.length - a.length);
 
   function translateZh(text) {
     let out = String(text ?? '');
-    for (const zh of ALIAS_KEYS) {
-      if (out.includes(zh)) out = out.split(zh).join(window.__ALIAS__[zh]);
+    for (const key of ALIAS_KEYS) {
+      const idx = out.toLowerCase().indexOf(key.toLowerCase());
+      if (idx >= 0) out = out.slice(0, idx) + ALIAS[key] + out.slice(idx + key.length);
     }
     return out;
   }

@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { DATA_DIR } from './paths.js';
+import { ALIAS_FILE, DATA_DIR } from './paths.js';
 import { readJson } from './store.js';
 
 export const OFFICIAL_FILE = resolve(DATA_DIR, 'bandai-official.json');
@@ -25,59 +25,21 @@ export function officialMeta() {
  * 官方库存的是日文（νガンダム / ユニコーン），胶圈平时说的是中文俗称（牛高达 / 独角兽）。
  * 没有这层翻译，中文用户搜什么都搜不到。
  */
-const ZH_ALIAS = {
-  独角兽: 'ユニコーン',
-  报丧女妖: 'バンシィ',
-  菲尼克斯: 'フェネクス',
-  牛高达: 'νガンダム',
-  ν高达: 'νガンダム',
-  海牛: 'ハイニューガンダム',
-  沙扎比: 'サザビー',
-  夜莺: 'ナイチンゲール',
-  新安洲: 'シナンジュ',
-  强袭自由: 'ストライクフリーダム',
-  自由高达: 'フリーダムガンダム',
-  强袭: 'ストライク',
-  异端: 'アストレイ',
-  红异端: 'アストレイ レッドフレーム',
-  蓝异端: 'アストレイ ブルーフレーム',
-  金异端: 'アストレイ ゴールドフレーム',
-  能天使: 'エクシア',
-  力天使: 'デュナメス',
-  主天使: 'キュリオス',
-  德天使: 'ヴァーチェ',
-  双零: 'ダブルオー',
-  元祖: 'RX-78-2',
-  初代: 'RX-78-2',
-  扎古: 'ザク',
-  古夫: 'グフ',
-  大魔: 'ドム',
-  卡碧尼: 'キュベレイ',
-  百式: '百式',
-  风灵: 'エアリアル',
-  异灵: 'キャリバーン',
-  巴巴托斯: 'バルバトス',
-  命运: 'デスティニー',
-  无限正义: 'インフィニットジャスティス',
-  神高达: 'ゴッドガンダム',
-  尊者: 'マスターガンダム',
-  飞翼零式: 'ウイングガンダムゼロ',
-  飞翼: 'ウイングガンダム',
-  拖鲁基斯: 'トールギス',
-  重武装: 'ヘビーアームズ',
-  死神: 'デスサイズ',
-  沙漠: 'サンドロック',
-  双头龙: 'アルトロン',
-  高达X: 'ガンダムX',
-  倒A: 'ターンエーガンダム'
-};
+let aliasCache = null;
 
-function translateZh(text) {
+async function loadAlias() {
+  if (aliasCache) return aliasCache;
+  aliasCache = await readJson(ALIAS_FILE, {});
+  return aliasCache;
+}
+
+function translateZh(text, alias) {
   let out = String(text ?? '');
-  // 长词优先，避免「强袭」把「强袭自由」拆坏
-  const keys = Object.keys(ZH_ALIAS).sort((a, b) => b.length - a.length);
-  for (const zh of keys) {
-    if (out.includes(zh)) out = out.split(zh).join(ZH_ALIAS[zh]);
+  // 长词优先，避免「强袭」把「强袭自由」拆坏；英文忽略大小写
+  const keys = Object.keys(alias).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
+    const idx = out.toLowerCase().indexOf(key.toLowerCase());
+    if (idx >= 0) out = out.slice(0, idx) + alias[key] + out.slice(idx + key.length);
   }
   return out;
 }
@@ -108,7 +70,7 @@ const LIMITED_RE = /限定|ガンダムベース|セブン-イレブン|プレ�
 const EXCLUDE_GRADES = new Set(['SD', 'SDW', 'SDCS', 'BB', 'EG', 'FG']);
 
 /** 配件：标题里出现这些基本是「XX用 底座/武器」，不是整机 */
-const ACCESSORY_RE = /用\s*ブースター|ブースターベッド|用\s*ベース|ディスプレイベース|武器セット|オプションパーツ/;
+const ACCESSORY_RE = /用\s*ブースター|ブースターベッド|用\s*ベース|ディスプレイベース|武器セット|オプションパーツ|クリアファイル|ファイル|ポスター|Tシャツ|マグカップ|キーホルダー|ストラップ/;
 
 export function isLimited(name) {
   return LIMITED_RE.test(String(name ?? ''));
@@ -137,7 +99,8 @@ function relevance(name, tokens) {
 
 export async function searchOfficial(query, { limit = 60, includeLimited = false } = {}) {
   const items = await loadOfficial();
-  const translated = translateZh(query);
+  const alias = await loadAlias();
+  const translated = translateZh(query, alias);
   const tokens = normalize(translated).split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return [];
 

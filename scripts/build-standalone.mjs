@@ -14,12 +14,12 @@ const OUT = resolve(ROOT, 'jiaojia.html');
 
 const read = (p) => readFile(resolve(ROOT, p), 'utf8');
 
-const [rawData, html, css, runtime, catalogSrc] = await Promise.all([
+const [rawData, html, css, runtime, rawAlias] = await Promise.all([
   read('data/bandai-official.json'),
   read('public/index.html'),
   read('public/style.css'),
   read('scripts/standalone-runtime.js'),
-  read('src/core/catalog.js')
+  read('data/aliases.json')
 ]);
 
 const store = JSON.parse(rawData);
@@ -35,10 +35,8 @@ const items = store.items
     r: it.released || null
   }));
 
-// 从 catalog.js 里抠出中文别名表，避免两份维护
-const aliasMatch = catalogSrc.match(/const ZH_ALIAS = \{([\s\S]*?)\n\};/);
-if (!aliasMatch) throw new Error('没能从 catalog.js 提取 ZH_ALIAS');
-const alias = new Function(`return {${aliasMatch[1]}}`)();
+// 中文/英文别名表，前后端共用同一份 data/aliases.json
+const alias = JSON.parse(rawAlias);
 
 const out = html
   .replace('<link rel="stylesheet" href="/style.css">', `<style>\n${css}\n</style>`)
