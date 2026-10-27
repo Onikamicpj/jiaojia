@@ -78,9 +78,16 @@ function cleanUrl(raw) {
  */
 let catalogCache = null;
 let catalogFetchedAt = null;
+let catalogStale = false;
+let catalogError = null;
 
 export function catalogInfo() {
-  return { count: catalogCache?.length ?? 0, fetchedAt: catalogFetchedAt };
+  return {
+    count: catalogCache?.length ?? 0,
+    fetchedAt: catalogFetchedAt,
+    stale: catalogStale,
+    error: catalogError
+  };
 }
 
 export async function loadCatalog({ force = false } = {}) {
@@ -90,26 +97,60 @@ export async function loadCatalog({ force = false } = {}) {
   if (cached && !force && age < CATALOG_TTL_MS) {
     catalogCache = cached.products;
     catalogFetchedAt = cached.fetchedAt;
-    return { products: cached.products, fetchedAt: cached.fetchedAt, cached: true };
+    catalogStale = false;
+    catalogError = null;
+    return { products: cached.products, fetchedAt: cached.fetchedAt, cached: true, stale: false };
   }
 
-  const products = [];
-  for (let page = 1; page <= MAX_PAGES; page += 1) {
-    const url = `${BASE}/collections/${COLLECTION}/products.json?limit=${PAGE_LIMIT}&page=${page}`;
-    const data = await fetchJson(url, { timeout: 30000, retries: 1 });
-    const batch = data?.products ?? [];
-    if (batch.length === 0) break;
-    products.push(...batch);
-    if (batch.length < PAGE_LIMIT) break;
-    await sleep(300);
+  try {
+    const products = [];
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const url = `${BASE}/collections/${COLLECTION}/products.json?limit=${PAGE_LIMIT}&page=${page}`;
+      const data = await fetchJson(url, { timeout: 30000, retries: 1 });
+      const batch = data?.products ?? [];
+      if (batch.length === 0) break;
+      products.push(...batch);
+      if (batch.length < PAGE_LIMIT) break;
+      await sleep(300);
+    }
+
+    if (products.length === 0) throw new Error('目录返回为空');
+
+    const payload = { fetchedAt: nowIso(), count: products.length, products };
+    await writeJson(CATALOG_FILE, payload);
+    catalogCache = products;
+    catalogFetchedAt = payload.fetchedAt;
+    catalogStale = false;
+    catalogError = null;
+
+    return { products, fetchedAt: payload.fetchedAt, cached: false, stale: false };
+  } catch (error) {
+    // 拉不动就退回旧目录。网络抖一下就说「没货」，比说「目录是三天前的」危险得多。
+    catalogError = String(error.message || error);
+
+    if (cached?.products?.length) {
+      catalogCache = cached.products;
+      catalogFetchedAt = cached.fetchedAt;
+      catalogStale = true;
+      return {
+        products: cached.products,
+        fetchedAt: cached.fetchedAt,
+        cached: true,
+        stale: true,
+        error: catalogError
+      };
+    }
+
+    catalogStale = true;
+    throw error;
   }
+}
 
-  const payload = { fetchedAt: nowIso(), count: products.length, products };
-  await writeJson(CATALOG_FILE, payload);
-  catalogCache = products;
-  catalogFetchedAt = payload.fetchedAt;
-
-  return { products, fetchedAt: payload.fetchedAt, cached: false };
+/** 用目录里的价格兜底：单品接口打不开时，至少还有一份几天前的挂牌价 */
+export function quoteFromCatalog(product) {
+  const quote = toQuote(product, null);
+  if (!quote) return null;
+  return { ...quote, estimated: true, liveAt: null };
 }
 
 /**

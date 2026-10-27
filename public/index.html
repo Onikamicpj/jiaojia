@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>胶价雷达 · 实时查胶价</title>
+<title>胶价雷达 · 查官价，算几算</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -13,56 +13,53 @@
     <span class="brand-mark"></span>
     <span class="brand-name">胶价雷达</span>
   </a>
-  <div class="fxbox">
-    <span class="fx-label">1 円</span>
-    <span class="fx-value" id="fxValue">—</span>
-    <span class="fx-note" id="fxNote"></span>
+  <div class="topbar-right">
+    <div class="fxbox">
+      <span class="fx-label">1 円</span>
+      <span class="fx-value" id="fxValue">—</span>
+    </div>
+    <div class="dbinfo" id="dbInfo"></div>
   </div>
 </header>
 
 <main class="shell">
 
   <section class="hero">
-    <h1>看中一只，<em>这个价值不值</em>？</h1>
+    <h1>这个价，<em>值不值</em>？</h1>
     <p class="lede">
-      搜机型看日本此刻报价；或者点「核价」，把你看到的价格填进去，
-      直接算出几算、比官价贵多少、比上次是涨还是跌。
+      查万代官方定价，填你看到的价，立刻算出几算、比官价贵多少。
+      不用管有没有货 —— 只回答一件事：现在买，亏不亏。
     </p>
 
     <form class="searchbar" id="searchForm" autocomplete="off">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
-      <input id="q" type="search" placeholder="牛高达 / 独角兽 / 大班 / RG 沙扎比" aria-label="搜索模型">
-      <button type="submit" id="goBtn">查价</button>
+      <input id="q" type="search" placeholder="独角兽 / 牛高达 / νガンダム / RX-93 / RG" aria-label="搜索">
+      <button type="submit" id="goBtn">查原价</button>
     </form>
 
-    <div class="hotline" id="hotline">
+    <div class="hotline">
       <span class="hot-label">常查</span>
+      <button class="hot" data-q="独角兽">独角兽</button>
       <button class="hot" data-q="牛高达">牛高达</button>
       <button class="hot" data-q="沙扎比">沙扎比</button>
-      <button class="hot" data-q="独角兽">独角兽</button>
+      <button class="hot" data-q="强袭">强袭</button>
       <button class="hot" data-q="能天使">能天使</button>
-      <button class="hot" data-q="强袭自由">强袭自由</button>
-      <button class="hot" data-q="元祖">元祖</button>
+      <button class="hot" data-q="扎古">扎古</button>
     </div>
   </section>
 
   <section class="status" id="status"></section>
 
-  <section class="result" id="result">
+  <section class="list" id="list">
     <div class="hint">
-      <p>能实时查到的：日本零售站（BanzaiHobby）的现货与中古报价，逐条确认库存。</p>
-      <p>查不到的：拼多多、京东、淘宝、闲鱼。这些平台要登录才有价，程序读不到 —— 点下面的按钮自己看，那是实时价。</p>
+      <p>官方库存的是日文原名（<b>νガンダム</b> / <b>ユニコーン</b>），中文俗称会先翻译再查。</p>
+      <p>搜不到就换型号试试：<b>RX-93</b>、<b>MSN-04</b>、<b>RX-0</b>。</p>
     </div>
   </section>
 
-  <section class="platforms" id="platforms" hidden>
-    <div class="plat-head">国内平台实时价 <span>程序抓不到，点开自己看</span></div>
-    <div class="plat-btns" id="platBtns"></div>
-  </section>
-
   <footer class="foot">
-    <p>官方定价为人工维护，汇率来自 ECB（frankfurter.dev），日本报价来自 BanzaiHobby 公开接口。</p>
-    <p class="foot-dim">价格仅供参考，购买前请以商家页面为准。本项目与万代及各品牌无关联。</p>
+    <p>官方定价抓自 bandai-hobby.net 商品页的「価格」字段，汇率来自 ECB（frankfurter.dev）。</p>
+    <p class="foot-dim">价格以官网为准，本项目与万代无关联。</p>
   </footer>
 
 </main>

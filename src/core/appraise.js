@@ -1,5 +1,6 @@
 import { convert } from './fx.js';
 import { getRates } from './fx.js';
+import { loadOfficial } from './catalog.js';
 import { HISTORY_FILE, KITS_FILE } from './paths.js';
 import { readJson, writeJson } from './store.js';
 import { nowIso, round } from './util.js';
@@ -108,4 +109,73 @@ export async function appraise({ kitId, price, currency = 'CNY' }) {
 export async function getHistory(kitId) {
   const history = await loadHistory();
   return (history[kitId] ?? []).slice(-20).reverse();
+}
+
+/**
+ * 按「官方定价库」的条目核价。
+ *
+ * 这是主路径：用户看到的现价 + 官网原价，直接判断值不值。
+ * 不关心日本零售价，也不关心有没有货 —— 只回答「这个价合理吗」。
+ */
+export async function appraiseOfficial({ itemId, price, currency = 'CNY' }) {
+  const items = await loadOfficial();
+  const item = items.find((it) => it.id === itemId);
+  if (!item) throw new Error(`官价库里没有这个条目：${itemId}`);
+
+  const seenPrice = Number(price);
+  if (!Number.isFinite(seenPrice) || seenPrice <= 0) throw new Error('价格无效');
+
+  const cur = String(currency).toUpperCase() === 'JPY' ? 'JPY' : 'CNY';
+  const fx = await getRates();
+
+  const cny = convert(seenPrice, cur, 'CNY', fx);
+  const msrpCny = convert(item.price, 'JPY', 'CNY', fx);
+  const suan = cny / (item.price / 100);
+  const grade = gradeOf(suan);
+  const vsMsrpPct = round((cny / msrpCny - 1) * 100, 1);
+
+  const history = await loadHistory();
+  const list = history[item.id] ?? [];
+  list.push({ at: nowIso(), price: seenPrice, currency: cur, cny: round(cny, 2), suan: round(suan, 2) });
+  history[item.id] = list.slice(-MAX_HISTORY);
+  await writeJson(HISTORY_FILE, history);
+
+  const previous = list.slice(0, -1);
+  const lastBefore = previous[previous.length - 1] ?? null;
+  const bestEver = list.reduce((min, it) => (it.suan && (!min || it.suan < min.suan) ? it : min), null);
+
+  let trend = null;
+  if (lastBefore?.suan) {
+    const diff = round(suan - lastBefore.suan, 2);
+    trend = {
+      diffSuan: diff,
+      diffPct: round(((suan - lastBefore.suan) / lastBefore.suan) * 100, 1),
+      direction: diff > 0.05 ? 'up' : diff < -0.05 ? 'down' : 'flat',
+      prevAt: lastBefore.at,
+      prevSuan: lastBefore.suan
+    };
+  }
+
+  return {
+    item: {
+      id: item.id,
+      name: item.name,
+      grade: item.grade,
+      scale: item.scale,
+      code: item.code,
+      released: item.released,
+      url: item.url
+    },
+    fx: { jpyCny: round(convert(1, 'JPY', 'CNY', fx), 4), date: fx.date, stale: Boolean(fx.stale) },
+    seen: { input: seenPrice, currency: cur, cny: round(cny, 2) },
+    msrpJpy: item.price,
+    msrpCny: round(msrpCny, 2),
+    suan: round(suan, 2),
+    grade,
+    vsMsrpPct,
+    trend,
+    bestEver: bestEver ? { suan: bestEver.suan, cny: bestEver.cny, at: bestEver.at } : null,
+    historyCount: list.length,
+    history: list.slice(-12).reverse()
+  };
 }

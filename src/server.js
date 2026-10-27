@@ -2,7 +2,10 @@ import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { PUBLIC_DIR } from './core/paths.js';
-import { appraise, getHistory } from './core/appraise.js';
+import { appraise, appraiseOfficial, getHistory } from './core/appraise.js';
+import { officialMeta, searchOfficial } from './core/catalog.js';
+import { convert, getRates } from './core/fx.js';
+import { round } from './core/util.js';
 import { searchAll } from './core/search.js';
 import { buildState, loadKits } from './core/state.js';
 import { collect } from './sources/index.js';
@@ -59,6 +62,40 @@ export function createServer() {
     const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 
     try {
+      if (url.pathname === '/api/official' && req.method === 'GET') {
+        const q = (url.searchParams.get('q') ?? '').trim();
+        if (!q) return sendJson(res, 200, { query: '', count: 0, items: [], meta: officialMeta() });
+        if (q.length > 60) return sendJson(res, 400, { error: '关键词太长' });
+
+        const includeLimited = url.searchParams.get('all') === '1';
+        const [items, fx] = await Promise.all([searchOfficial(q, { includeLimited }), getRates()]);
+        return sendJson(res, 200, {
+          query: q,
+          count: items.length,
+          includeLimited,
+          fx: {
+            jpyCny: round(convert(1, 'JPY', 'CNY', fx), 4),
+            date: fx.date,
+            stale: Boolean(fx.stale)
+          },
+          meta: officialMeta(),
+          items: items.map((it) => ({
+            ...it,
+            cny: round(convert(it.price, 'JPY', 'CNY', fx), 1)
+          }))
+        });
+      }
+
+      if (url.pathname === '/api/check' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const result = await appraiseOfficial({
+          itemId: body.itemId,
+          price: body.price,
+          currency: body.currency
+        });
+        return sendJson(res, 200, result);
+      }
+
       if (url.pathname === '/api/search' && req.method === 'GET') {
         const q = (url.searchParams.get('q') ?? '').trim();
         if (!q) return sendJson(res, 400, { error: '缺少 q 参数' });

@@ -3,7 +3,7 @@ import { matchesKit, parseGrade, gradeOfLine } from './match.js';
 import { KITS_FILE } from './paths.js';
 import { readJson } from './store.js';
 import { round } from './util.js';
-import { catalogInfo, fetchLive, isNoisyVersion, searchCatalog } from '../sources/banzai.js';
+import { catalogInfo, fetchLive, isNoisyVersion, quoteFromCatalog, searchCatalog } from '../sources/banzai.js';
 
 async function loadKits() {
   const data = await readJson(KITS_FILE, { kits: [] });
@@ -150,7 +150,8 @@ export async function searchAll(rawQuery) {
 
         const top = cands.slice(0, 2);
         const live = await Promise.all(top.map((p) => fetchLive(p.handle).catch(() => null)));
-        return live.filter(Boolean);
+        // 实时接口打不开时退回目录价，并标上 estimated，别假装是刚查的
+        return top.map((p, i) => live[i] ?? quoteFromCatalog(p)).filter(Boolean);
       } catch {
         return [];
       }
@@ -181,6 +182,11 @@ export async function searchAll(rawQuery) {
     matchedKit,
     fx: fxView(fx),
     catalog: catalogInfo(),
+    source: {
+      liveCount: results.filter((r) => !r.estimated).length,
+      estimatedCount: results.filter((r) => r.estimated).length,
+      ok: results.some((r) => !r.estimated)
+    },
     candidateCount: candidateTotal,
     specCount: targets.length,
     count: results.length,
