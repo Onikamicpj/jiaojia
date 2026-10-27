@@ -125,7 +125,11 @@ function relevance(name, tokens) {
   const bare = n.replace(/（[^）]*）|\([^)]*\)/g, '');
   let score = 0;
   for (const t of tokens) {
-    if (bare.includes(t)) score += 100;
+    const idx = bare.indexOf(t);
+    if (idx === 0) score += 120;
+    else if (idx > 0 && /\s/.test(bare[idx - 1])) score += 100;
+    else if (idx > 0 && /[-‐ー]/.test(bare[idx - 1])) score += 70;
+    else if (idx > 0) score += 90;
     else if (n.includes(t)) score += 8;
   }
   return score;
