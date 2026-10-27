@@ -208,7 +208,10 @@ body {
   background: #f2f3f5;
   padding: 3px;
 }
-.card-img--empty { background: rgba(255, 255, 255, 0.045); }
+.card-img--empty {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px dashed rgba(255, 255, 255, 0.11);
+}
 .card-img.broken { display: none; }
 .card-img--empty + .card-info { margin-left: 0; }
 

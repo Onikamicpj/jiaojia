@@ -114,6 +114,14 @@
 
   /* ---- 渲染 ---- */
 
+  // 官网图走代理：一是国内直连 bandai-hobby.net 经常解析不了，
+  // 二是可以顺便压缩成 160px 的 webp，省流量
+  function imgSrc(raw) {
+    if (!raw) return '';
+    const stripped = raw.replace(/^https?:\/\//, '');
+    return `https://wsrv.nl/?url=${encodeURIComponent(stripped)}&w=160&h=160&fit=contain&output=webp&q=80`;
+  }
+
   function cardOf(it) {
     const tags = [];
     if (it.g) {
@@ -126,7 +134,7 @@
     return `<article class="card" data-id="${esc(it.id)}" data-price="${it.p}">
       <div class="card-body">
         ${it.i
-          ? `<img class="card-img" src="${esc(it.i)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('broken')">`
+          ? `<img class="card-img" src="${esc(imgSrc(it.i))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('broken')">`
           : '<div class="card-img card-img--empty"></div>'}
         <div class="card-info">
           <div class="specs">${tags.join('')}</div>

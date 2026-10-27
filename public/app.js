@@ -43,6 +43,12 @@ function gradeOf(suan) {
 
 /* ---------- 卡片 ---------- */
 
+function imgSrc(raw) {
+  if (!raw) return '';
+  const stripped = raw.replace(/^https?:\/\//, '');
+  return `https://wsrv.nl/?url=${encodeURIComponent(stripped)}&w=160&h=160&fit=contain&output=webp&q=80`;
+}
+
 function cardOf(item) {
   const tags = [];
   if (item.grade) {
@@ -55,7 +61,7 @@ function cardOf(item) {
   return `<article class="card" data-id="${esc(item.id)}" data-price="${item.price}">
     <div class="card-body">
       ${item.img
-        ? `<img class="card-img" src="${esc(item.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('broken')">`
+        ? `<img class="card-img" src="${esc(imgSrc(item.img))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('broken')">`
         : '<div class="card-img card-img--empty"></div>'}
       <div class="card-info">
         <div class="specs">${tags.join('')}</div>
