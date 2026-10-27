@@ -188,7 +188,7 @@ body {
 .list { display: flex; flex-direction: column; gap: 10px; }
 
 .card {
-  padding: 16px 18px 14px;
+  padding: 14px 18px 14px;
   border: 1px solid var(--line);
   border-radius: 11px;
   background: var(--surface);
@@ -196,7 +196,23 @@ body {
 }
 .card:hover { border-color: var(--line-2); }
 
-.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+/* 缩略图 + 信息 + 价格 */
+.card-body { display: flex; align-items: flex-start; gap: 14px; }
+
+.card-img {
+  width: 78px;
+  height: 78px;
+  flex: none;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f2f3f5;
+  padding: 3px;
+}
+.card-img--empty { background: rgba(255, 255, 255, 0.045); }
+.card-img.broken { display: none; }
+.card-img--empty + .card-info { margin-left: 0; }
+
+.card-info { flex: 1; min-width: 0; }
 
 .specs { display: flex; flex-wrap: wrap; gap: 5px; }
 

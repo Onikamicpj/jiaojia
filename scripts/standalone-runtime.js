@@ -124,15 +124,20 @@
     if (it.c) tags.push(`<span class="spec">${esc(it.c)}</span>`);
 
     return `<article class="card" data-id="${esc(it.id)}" data-price="${it.p}">
-      <div class="card-head">
-        <div class="specs">${tags.join('')}</div>
+      <div class="card-body">
+        ${it.i
+          ? `<img class="card-img" src="${esc(it.i)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('broken')">`
+          : '<div class="card-img card-img--empty"></div>'}
+        <div class="card-info">
+          <div class="specs">${tags.join('')}</div>
+          <h3 class="card-name">${esc(it.n)}</h3>
+          <div class="card-meta">${esc(it.r || '发售日未标')} · 官方定价</div>
+        </div>
         <div class="card-price">
           <div class="jpy">${fmtJpy(it.p)}</div>
           <div class="cny">≈ ${fmtCny(it.p * fx)}</div>
         </div>
       </div>
-      <h3 class="card-name">${esc(it.n)}</h3>
-      <div class="card-meta">${esc(it.r || '发售日未标')} · 官方定价</div>
 
       <div class="calc">
         <span class="calc-label">你看到</span>

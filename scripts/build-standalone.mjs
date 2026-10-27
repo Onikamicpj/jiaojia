@@ -32,7 +32,8 @@ const items = store.items
     g: it.grade || null,
     s: it.scale || null,
     c: it.code || null,
-    r: it.released || null
+    r: it.released || null,
+    i: it.img || null
   }));
 
 // 中文/英文别名表，前后端共用同一份 data/aliases.json

@@ -52,17 +52,21 @@ function cardOf(item) {
   if (item.scale) tags.push(`<span class="spec">${esc(item.scale)}</span>`);
   if (item.code) tags.push(`<span class="spec">${esc(item.code)}</span>`);
 
-  return `<article class="card" data-id="${esc(item.id)}">
-    <div class="card-head">
-      <div class="specs">${tags.join('')}</div>
+  return `<article class="card" data-id="${esc(item.id)}" data-price="${item.price}">
+    <div class="card-body">
+      ${item.img
+        ? `<img class="card-img" src="${esc(item.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('broken')">`
+        : '<div class="card-img card-img--empty"></div>'}
+      <div class="card-info">
+        <div class="specs">${tags.join('')}</div>
+        <h3 class="card-name">${esc(item.name)}</h3>
+        <div class="card-meta">${esc(item.released ?? '发售日未标')} · 官方定价</div>
+      </div>
       <div class="card-price">
         <div class="jpy">${fmtJpy(item.price)}</div>
         <div class="cny">≈ ${fmtCny(item.cny)}</div>
       </div>
     </div>
-
-    <h3 class="card-name">${esc(item.name)}</h3>
-    <div class="card-meta">${esc(item.released ?? '发售日未标')} · 官方定价</div>
 
     <div class="calc">
       <span class="calc-label">你看到</span>
