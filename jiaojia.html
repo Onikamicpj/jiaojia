@@ -140,6 +140,42 @@ body {
 .status { min-height: 20px; margin-bottom: 14px; font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .status .err { color: var(--bad); }
 
+/* 规格筛选 */
+
+.filters { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 15px; }
+.filters:empty { display: none; }
+
+.fchip {
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fchip b { font-weight: 500; color: var(--faint); margin-left: 3px; font-variant-numeric: tabular-nums; }
+.fchip:hover { border-color: var(--line-2); color: var(--text); }
+.fchip.active { background: var(--text); color: #0a0b0d; border-color: var(--text); }
+.fchip.active b { color: #0a0b0d; opacity: 0.55; }
+
+/* 规格分组标题 */
+
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--faint);
+}
+.list > .group-head:first-child { margin-top: 2px; }
+.group-head::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.group-head i { font-style: normal; letter-spacing: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
+
 /* ---------- 提示 / 空态 ---------- */
 
 .hint, .empty {
@@ -355,20 +391,12 @@ body {
 
     <form class="searchbar" id="searchForm" autocomplete="off">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
-      <input id="q" type="search" placeholder="独角兽 / 牛高达 / νガンダム / RX-93 / RG" aria-label="搜索">
+      <input id="q" type="search" placeholder="独角兽 / 牛高达 / 强袭自由 / RX-93" aria-label="搜索">
       <button type="submit" id="goBtn">查原价</button>
     </form>
-
-    <div class="hotline">
-      <span class="hot-label">常查</span>
-      <button class="hot" data-q="独角兽">独角兽</button>
-      <button class="hot" data-q="牛高达">牛高达</button>
-      <button class="hot" data-q="沙扎比">沙扎比</button>
-      <button class="hot" data-q="强袭">强袭</button>
-      <button class="hot" data-q="能天使">能天使</button>
-      <button class="hot" data-q="扎古">扎古</button>
-    </div>
   </section>
+
+  <section class="filters" id="filters"></section>
 
   <section class="status" id="status"></section>
 
@@ -402,8 +430,9 @@ window.__ALIAS__ = {"元祖":"RX-78-2","初代":"RX-78-2","初代高达":"RX-78-
   const ACCESSORY_RE = /用\s*ブースター|ブースターベッド|用\s*ベース|ディスプレイベース|武器セット|オプションパーツ|クリアファイル|ファイル|ポスター|Tシャツ|マグカップ|キーホルダー|ストラップ/;
 
   const PAGE = 24;
+  const GRADE_SEQ = ['HG', 'RG', 'MG', 'PG', '其他'];
   let allItems = [];
-  let shown = PAGE;
+  let activeGrade = 'all';
   let fx = 0.0424;
   let fxNote = '内置汇率';
 
@@ -543,27 +572,64 @@ window.__ALIAS__ = {"元祖":"RX-78-2","初代":"RX-78-2","初代高达":"RX-78-
     </article>`;
   }
 
+  function renderFilters(items) {
+    const box = $('filters');
+    if (!box) return;
+
+    const counts = {};
+    for (const it of items) {
+      const g = it.g || '其他';
+      counts[g] = (counts[g] || 0) + 1;
+    }
+
+    const keys = GRADE_SEQ.filter((g) => counts[g]);
+    box.innerHTML = [
+      `<button class="fchip${activeGrade === 'all' ? ' active' : ''}" data-g="all">全部 <b>${items.length}</b></button>`,
+      ...keys.map((g) => `<button class="fchip${activeGrade === g ? ' active' : ''}" data-g="${esc(g)}">${esc(g)} <b>${counts[g]}</b></button>`)
+    ].join('');
+
+    box.querySelectorAll('.fchip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeGrade = btn.dataset.g;
+        render(allItems);
+      });
+    });
+  }
+
   function render(items) {
     const list = $('list');
-    if (items.length === 0) {
-      list.innerHTML = `<div class="empty">
-        <p><b>没查到这一款。</b></p>
-        <p>官方库是日文原名，试试 <b>νガンダム</b>、<b>ユニコーン</b>，或直接用型号 <b>RX-93</b>。</p>
-      </div>`;
+    renderFilters(items);
+
+    const filtered = activeGrade === 'all' ? items : items.filter((it) => (it.g || '其他') === activeGrade);
+
+    if (filtered.length === 0) {
+      list.innerHTML = items.length === 0
+        ? `<div class="empty">
+            <p><b>没查到这一款。</b></p>
+            <p>试试中文名 <b>强袭自由</b>、<b>红异端</b>，或型号 <b>RX-93</b>。</p>
+          </div>`
+        : `<div class="empty"><p><b>这个规格下没有结果。</b></p><p>点「全部」看看别的规格。</p></div>`;
       return;
     }
 
-    const more = items.length > shown ? `<button class="more" type="button">还有 ${items.length - shown} 条，继续加载</button>` : '';
-    list.innerHTML = items.slice(0, shown).map(cardOf).join('') + more;
-    bindCards();
-
-    const btn = list.querySelector('.more');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        shown += PAGE;
-        render(allItems);
-      });
+    const groups = {};
+    for (const it of filtered) {
+      const g = it.g || '其他';
+      (groups[g] = groups[g] || []).push(it);
     }
+
+    let html = '';
+    for (const g of GRADE_SEQ) {
+      const arr = groups[g];
+      if (!arr || !arr.length) continue;
+      if (activeGrade === 'all') {
+        html += `<div class="group-head"><span>${esc(g)}</span><i>${arr.length}</i></div>`;
+      }
+      html += arr.map(cardOf).join('');
+    }
+
+    list.innerHTML = html;
+    bindCards();
   }
 
   function bindCards() {
@@ -639,7 +705,7 @@ window.__ALIAS__ = {"元祖":"RX-78-2","初代":"RX-78-2","初代高达":"RX-78-
     const query = String(q || '').trim();
     if (!query) return;
     allItems = searchItems(query);
-    shown = PAGE;
+    activeGrade = 'all';
     $('status').textContent = allItems.length ? `「${query}」命中 ${allItems.length} 条` : `「${query}」命中 0 条`;
     render(allItems);
   }
@@ -647,13 +713,6 @@ window.__ALIAS__ = {"元祖":"RX-78-2","初代":"RX-78-2","初代高达":"RX-78-
   document.getElementById('searchForm').addEventListener('submit', (e) => {
     e.preventDefault();
     submit($('q').value);
-  });
-
-  document.querySelector('.hotline').addEventListener('click', (e) => {
-    const btn = e.target.closest('.hot');
-    if (!btn) return;
-    $('q').value = btn.dataset.q;
-    submit(btn.dataset.q);
   });
 
   $('dbInfo').textContent = `收录 ${window.__DATA__.length.toLocaleString('zh-CN')} 条`;

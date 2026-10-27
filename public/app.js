@@ -6,16 +6,17 @@ const el = {
   go: $('goBtn'),
   fxValue: $('fxValue'),
   dbInfo: $('dbInfo'),
+  filters: $('filters'),
   status: $('status'),
   list: $('list')
 };
 
 const GRADE_COLOR = { HG: '#8a8f98', RG: '#3dd6c4', MG: '#6ea8fe', PG: '#ff6b35', EG: '#8a8f98', FG: '#8a8f98', SD: '#a78bfa' };
 const VERDICT_COLOR = { good: '#3dd6c4', normal: '#d8d2c4', high: '#f5a623', bad: '#ff5a5a' };
+const GRADE_ORDER = ['HG', 'RG', 'MG', 'PG', '其他'];
 
-const PAGE = 24;
 let allItems = [];
-let shown = PAGE;
+let activeGrade = 'all';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -91,26 +92,64 @@ function bindCards() {
   });
 }
 
+function renderFilters(items) {
+  if (!el.filters) return;
+
+  const counts = {};
+  for (const it of items) {
+    const g = it.grade || '其他';
+    counts[g] = (counts[g] ?? 0) + 1;
+  }
+
+  const keys = GRADE_ORDER.filter((g) => counts[g]);
+  const chips = [
+    `<button class="fchip${activeGrade === 'all' ? ' active' : ''}" data-g="all">全部 <b>${items.length}</b></button>`,
+    ...keys.map((g) => `<button class="fchip${activeGrade === g ? ' active' : ''}" data-g="${esc(g)}">${esc(g)} <b>${counts[g]}</b></button>`)
+  ];
+
+  el.filters.innerHTML = chips.join('');
+  el.filters.querySelectorAll('.fchip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      activeGrade = btn.dataset.g;
+      render(allItems);
+    });
+  });
+}
+
 function render(items) {
-  if (items.length === 0) {
-    el.list.innerHTML = `<div class="empty">
-      <p><b>没查到这一款。</b></p>
-      <p>官方库是日文原名，试试：<b>νガンダム</b>、<b>ユニコーン</b>、<b>ストライクフリーダム</b>，或者直接用型号 <b>RX-93</b>。</p>
-    </div>`;
+  renderFilters(items);
+
+  const filtered = activeGrade === 'all' ? items : items.filter((it) => (it.grade || '其他') === activeGrade);
+
+  if (filtered.length === 0) {
+    el.list.innerHTML = items.length === 0
+      ? `<div class="empty">
+          <p><b>没查到这一款。</b></p>
+          <p>试试中文名 <b>强袭自由</b>、<b>红异端</b>，或型号 <b>RX-93</b>。</p>
+        </div>`
+      : `<div class="empty"><p><b>这个规格下没有结果。</b></p><p>点「全部」看看别的规格。</p></div>`;
     return;
   }
 
-  const moreBtn = items.length > shown ? `<button class="more" type="button">还有 ${items.length - shown} 条，继续加载</button>` : '';
-  el.list.innerHTML = items.slice(0, shown).map(cardOf).join('') + moreBtn;
-  bindCards();
-
-  const more = el.list.querySelector('.more');
-  if (more) {
-    more.addEventListener('click', () => {
-      shown += PAGE;
-      render(allItems);
-    });
+  // 按规格分组，逐个摆出来
+  const groups = {};
+  for (const it of filtered) {
+    const g = it.grade || '其他';
+    (groups[g] ??= []).push(it);
   }
+
+  let html = '';
+  for (const g of GRADE_ORDER) {
+    const list = groups[g];
+    if (!list?.length) continue;
+    if (activeGrade === 'all') {
+      html += `<div class="group-head"><span>${esc(g)}</span><i>${list.length}</i></div>`;
+    }
+    html += list.map(cardOf).join('');
+  }
+
+  el.list.innerHTML = html;
+  bindCards();
 }
 
 /* ---------- 核价 ---------- */
@@ -188,11 +227,9 @@ async function search(keyword) {
     if (data.meta) el.dbInfo.textContent = `收录 ${Number(data.meta.count).toLocaleString('zh-CN')} 条`;
 
     allItems = data.items ?? [];
-    shown = PAGE;
+    activeGrade = 'all';
 
-    el.status.textContent = allItems.length
-      ? `「${q}」命中 ${allItems.length} 条${allItems.length > PAGE ? `（先显示 ${PAGE} 条）` : ''}`
-      : `「${q}」命中 0 条`;
+    el.status.textContent = allItems.length ? `「${q}」命中 ${allItems.length} 条` : `「${q}」命中 0 条`;
 
     render(allItems);
     history.replaceState(null, '', `?q=${encodeURIComponent(q)}`);
@@ -210,13 +247,6 @@ async function search(keyword) {
 el.form.addEventListener('submit', (e) => {
   e.preventDefault();
   search(el.q.value);
-});
-
-document.querySelector('.hotline').addEventListener('click', (e) => {
-  const btn = e.target.closest('.hot');
-  if (!btn) return;
-  el.q.value = btn.dataset.q;
-  search(btn.dataset.q);
 });
 
 const initial = new URLSearchParams(location.search).get('q');

@@ -9,8 +9,9 @@
   const ACCESSORY_RE = /用\s*ブースター|ブースターベッド|用\s*ベース|ディスプレイベース|武器セット|オプションパーツ|クリアファイル|ファイル|ポスター|Tシャツ|マグカップ|キーホルダー|ストラップ/;
 
   const PAGE = 24;
+  const GRADE_SEQ = ['HG', 'RG', 'MG', 'PG', '其他'];
   let allItems = [];
-  let shown = PAGE;
+  let activeGrade = 'all';
   let fx = 0.0424;
   let fxNote = '内置汇率';
 
@@ -150,27 +151,64 @@
     </article>`;
   }
 
+  function renderFilters(items) {
+    const box = $('filters');
+    if (!box) return;
+
+    const counts = {};
+    for (const it of items) {
+      const g = it.g || '其他';
+      counts[g] = (counts[g] || 0) + 1;
+    }
+
+    const keys = GRADE_SEQ.filter((g) => counts[g]);
+    box.innerHTML = [
+      `<button class="fchip${activeGrade === 'all' ? ' active' : ''}" data-g="all">全部 <b>${items.length}</b></button>`,
+      ...keys.map((g) => `<button class="fchip${activeGrade === g ? ' active' : ''}" data-g="${esc(g)}">${esc(g)} <b>${counts[g]}</b></button>`)
+    ].join('');
+
+    box.querySelectorAll('.fchip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeGrade = btn.dataset.g;
+        render(allItems);
+      });
+    });
+  }
+
   function render(items) {
     const list = $('list');
-    if (items.length === 0) {
-      list.innerHTML = `<div class="empty">
-        <p><b>没查到这一款。</b></p>
-        <p>官方库是日文原名，试试 <b>νガンダム</b>、<b>ユニコーン</b>，或直接用型号 <b>RX-93</b>。</p>
-      </div>`;
+    renderFilters(items);
+
+    const filtered = activeGrade === 'all' ? items : items.filter((it) => (it.g || '其他') === activeGrade);
+
+    if (filtered.length === 0) {
+      list.innerHTML = items.length === 0
+        ? `<div class="empty">
+            <p><b>没查到这一款。</b></p>
+            <p>试试中文名 <b>强袭自由</b>、<b>红异端</b>，或型号 <b>RX-93</b>。</p>
+          </div>`
+        : `<div class="empty"><p><b>这个规格下没有结果。</b></p><p>点「全部」看看别的规格。</p></div>`;
       return;
     }
 
-    const more = items.length > shown ? `<button class="more" type="button">还有 ${items.length - shown} 条，继续加载</button>` : '';
-    list.innerHTML = items.slice(0, shown).map(cardOf).join('') + more;
-    bindCards();
-
-    const btn = list.querySelector('.more');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        shown += PAGE;
-        render(allItems);
-      });
+    const groups = {};
+    for (const it of filtered) {
+      const g = it.g || '其他';
+      (groups[g] = groups[g] || []).push(it);
     }
+
+    let html = '';
+    for (const g of GRADE_SEQ) {
+      const arr = groups[g];
+      if (!arr || !arr.length) continue;
+      if (activeGrade === 'all') {
+        html += `<div class="group-head"><span>${esc(g)}</span><i>${arr.length}</i></div>`;
+      }
+      html += arr.map(cardOf).join('');
+    }
+
+    list.innerHTML = html;
+    bindCards();
   }
 
   function bindCards() {
@@ -246,7 +284,7 @@
     const query = String(q || '').trim();
     if (!query) return;
     allItems = searchItems(query);
-    shown = PAGE;
+    activeGrade = 'all';
     $('status').textContent = allItems.length ? `「${query}」命中 ${allItems.length} 条` : `「${query}」命中 0 条`;
     render(allItems);
   }
@@ -254,13 +292,6 @@
   document.getElementById('searchForm').addEventListener('submit', (e) => {
     e.preventDefault();
     submit($('q').value);
-  });
-
-  document.querySelector('.hotline').addEventListener('click', (e) => {
-    const btn = e.target.closest('.hot');
-    if (!btn) return;
-    $('q').value = btn.dataset.q;
-    submit(btn.dataset.q);
   });
 
   $('dbInfo').textContent = `收录 ${window.__DATA__.length.toLocaleString('zh-CN')} 条`;
